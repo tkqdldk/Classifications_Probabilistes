@@ -22,8 +22,12 @@ def getPrior(df):
     moyenne=df.loc[:,"target"].mean()
     ecart_type=df.loc[:,"target"].std()
 
-    marge_erreur=1.96*(ecart_type/math.sqrt(df.shape[0])
-    min=moyenne-marge_erreur
-    max=moyenne+marge_erreur
+    me = 1.96*(ecart_type/math.sqrt(df.shape[0]))
 
-    return {'estimation' : moyenne, 'min5pourcent' : min , 'max5pourcent': max}
+    minpourcent = moyenne-me
+
+    maxpourcent = moyenne+me
+
+    return {'estimation' : moyenne, 'min5pourcent' : minpourcent , 'max5pourcent': maxpourcent}
+
+
