@@ -4,6 +4,7 @@
 import utils
 import pandas as pd
 import numpy as np
+import math
 
 def getPrior(df):
     """
@@ -11,14 +12,18 @@ def getPrior(df):
 
     Parameters
     ----------
-    df : DataFrame
+    df : DataFrame etudié
 
     Results
     -------
-    Dict[estimation,
+    Dict['estimation','min5pourcent','max5pourcent']
     """
+
     moyenne=df.loc[:,"target"].mean()
+    ecart_type=df.loc[:,"target"].std()
 
-    return moyenne
+    marge_erreur=1.96*(ecart_type/math.sqrt(df.shape[0])
+    min=moyenne-marge_erreur
+    max=moyenne+marge_erreur
 
-getPrior(train.csv)
+    return {'estimation' : moyenne, 'min5pourcent' : min , 'max5pourcent': max}
