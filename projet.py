@@ -262,8 +262,8 @@ class MAP2DClassifier(APrioriClassifier):
 #####
 # Question 2.4 : comparaison
 #####
-# Nous préférons MAP2DClassifier parce que
-# et aussi parce que ...
+# Nous préférons MAP2DClassifier parce que nous cherchons à faire diminuer le nombre de faux positifs
+# et aussi parce que
 #####
 
 
@@ -275,18 +275,20 @@ def nbParams(df, liste = None):
     ----------
         df: pandas.DataFrame
             Le dataframe contenant les données.
-        liste (list, optional):
+        liste: list, optional
             Liste facultative de noms de colonnes. Si non spécifié, les colonnes du dataframe seront utilisées par défaut.
     Résultats
     -------
         None
     """
     taille = 8
+    res = 0
     if liste is None:
         liste = list(df.columns)
     for attr in liste:
         taille *= np.unique(df[attr]).size
     print("{} variable(s) : {} octets".format(len(liste), taille))
+    return taille # pas sûre a tester
 
 
 def nbParamsIndep(df):
@@ -295,7 +297,8 @@ def nbParamsIndep(df):
     
     Paramètres
     ----------
-        df (pandas.DataFrame): Le dataframe contenant les données.
+        df : pandas.DataFrame
+         Le dataframe contenant les données
     
     Résultats
     -------
@@ -326,9 +329,9 @@ def nbParamsIndep(df):
 # Donc, si A indépendant de C sachant B, on peut écrire la loi jointe P(A,B,C) = P(A)*P(B|A)*P(C|B).
 #
 #
-# Si les 3 variables A,B et C ont 5 valeurs de n octets.
-
-
+# Si les 3 variables A,B et C ont 5 valeurs de taille 8 octets.
+# Avec l'indépendance conditionnelles, il faut (5^3)*8=1000 octets pour représenter ces valeurs en mémoire.
+# Tandis que sans l'indépendance en mémoire, il faut (5+2*(5^2))*8=440 octets pour les représenter.
 #####
 
 
@@ -339,7 +342,7 @@ def drawNaiveBayes(df, root):
     Paramètres
     ----------
         df: pandas.dataframe
-            Dataframe contenant les données.
+            Dataframe de reference
         root: str
             Le nom de la colonne du Dataframe utilisée comme racine.
     Résultats
@@ -355,13 +358,16 @@ def drawNaiveBayes(df, root):
         chaine += root + "->" + attr + ";"
     return utils.drawGraph(chaine)
 
+
 def nbParamsNaiveBayes(df, root, attrs = None):
     """
     Affiche la taille memoire pour la representation des tables de probabilites
     Parametres
     ----------
         df : pandas.dataframe
+            DataFrame de reference
         root : str
+            Nom de la c
         attrs : Dict
     Resultats
     ---------
@@ -375,7 +381,11 @@ def nbParamsNaiveBayes(df, root, attrs = None):
         attrs = list.df[colonne]
 
     for attr in attrs:
+        if attr == root:
+            continue
+        tmp = (taille * np.unique(df[attr]).size) * 8
+        size += tmp
 
+    print("{} variable(s) : {} octets".format(len(attrs), size))
+    return size #encore une fois pas sûre
 
-
-    return size
