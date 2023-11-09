@@ -262,7 +262,7 @@ class MAP2DClassifier(APrioriClassifier):
 #####
 # Question 2.4 : comparaison
 #####
-# Nous préférons ... parce que ...
+# Nous préférons MAP2DClassifier parce que
 # et aussi parce que ...
 #####
 
@@ -273,9 +273,10 @@ def nbParams(df, liste = None):
     
     Paramètres
     ----------
-        df (pandas.DataFrame): Le dataframe contenant les données.
-        liste (list, optional): Liste facultative de noms de colonnes. Si non spécifié, 
-                                les colonnes du dataframe seront utilisées par défaut.
+        df: pandas.DataFrame
+            Le dataframe contenant les données.
+        liste (list, optional):
+            Liste facultative de noms de colonnes. Si non spécifié, les colonnes du dataframe seront utilisées par défaut.
     Résultats
     -------
         None
@@ -308,10 +309,26 @@ def nbParamsIndep(df):
 
 
 #####
-# Question 3.3 : Preuve
+# Question 3.3
 #####
-# 
-# 
+# Preuve:
+# ------
+# Soit A, B et C des variables aléatoires. On a A indépendant de C sachant B. Montrons que P(A,B,C) = P(A)*P(B|A)*P(C|B).
+# On a : P((A,C)|B)=P(A|B)*P(C|B)
+#                  =(P(A,B)/P(B))*(P(C,B)/P(B)) en utilisant un définition des probabilités conditionnelles
+#
+# Or : P(A,B,C)=P(B)*P((A,C)|B))  ---> je suis pas sûre, revérifier
+#              =P(B)*(P(A,B)/P(B))*(P(C,B)/P(B))
+#              =P(A,B)*P(C,B)/P(B)
+#              =(P(A)/P(A))*P(A,B)*P(C,B)/P(B)
+#              =P(A)*(P(A,B)/P(A))*(P(C,B)/P(B))
+#              =P(A)*P(B|A)*P(C|B) CQFD
+# Donc, si A indépendant de C sachant B, on peut écrire la loi jointe P(A,B,C) = P(A)*P(B|A)*P(C|B).
+#
+#
+# Si les 3 variables A,B et C ont 5 valeurs de n octets.
+
+
 #####
 
 
@@ -321,8 +338,10 @@ def drawNaiveBayes(df, root):
     
     Paramètres
     ----------
-        df: Dataframe contenant les données.
-        root: Le nom de la colonne du Dataframe utilisée comme racine.
+        df: pandas.dataframe
+            Dataframe contenant les données.
+        root: str
+            Le nom de la colonne du Dataframe utilisée comme racine.
     Résultats
     -------
     Une représentation graphique du modèle naïve Bayes.
@@ -336,7 +355,27 @@ def drawNaiveBayes(df, root):
         chaine += root + "->" + attr + ";"
     return utils.drawGraph(chaine)
 
+def nbParamsNaiveBayes(df, root, attrs = None):
+    """
+    Affiche la taille memoire pour la representation des tables de probabilites
+    Parametres
+    ----------
+        df : pandas.dataframe
+        root : str
+        attrs : Dict
+    Resultats
+    ---------
+        int
+
+    """
+    taille = np.unique(df[root]).siza
+    size = taille * 8
+
+    if attrs == None:
+        attrs = list.df[colonne]
+
+    for attr in attrs:
 
 
 
-    
+    return size
