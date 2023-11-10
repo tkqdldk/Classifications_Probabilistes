@@ -312,7 +312,7 @@ def nbParamsIndep(df):
 
 
 #####
-# Question 3.3
+# Question 3.3.a
 #####
 # Preuve:
 # ------
@@ -320,20 +320,38 @@ def nbParamsIndep(df):
 # On a : P((A,C)|B)=P(A|B)*P(C|B)
 #                  =(P(A,B)/P(B))*(P(C,B)/P(B)) en utilisant un définition des probabilités conditionnelles
 #
-# Or : P(A,B,C)=P(B)*P((A,C)|B))  ---> je suis pas sûre, revérifier
+# Or : P(A,B,C)=P(B)*P((A,C)|B))
 #              =P(B)*(P(A,B)/P(B))*(P(C,B)/P(B))
 #              =P(A,B)*P(C,B)/P(B)
 #              =(P(A)/P(A))*P(A,B)*P(C,B)/P(B)
 #              =P(A)*(P(A,B)/P(A))*(P(C,B)/P(B))
 #              =P(A)*P(B|A)*P(C|B) CQFD
 # Donc, si A indépendant de C sachant B, on peut écrire la loi jointe P(A,B,C) = P(A)*P(B|A)*P(C|B).
-#
-#
+#####
+
+#####
+# Question 3.3.b
+#####
 # Si les 3 variables A,B et C ont 5 valeurs de taille 8 octets.
 # Avec l'indépendance conditionnelles, il faut (5^3)*8=1000 octets pour représenter ces valeurs en mémoire.
 # Tandis que sans l'indépendance en mémoire, il faut (5+2*(5^2))*8=440 octets pour les représenter.
 #####
 
+#####
+# Question 4.1
+#####
+# Voici notre proposition de code pour dessiner les graphes pour 5 variables complètement indépendantes:
+# utils.drawGraphHorizontal("A;B;C;D;E")
+# Voici notre proposition pour dessiner les graphes pour 5 variables sans indépendance:
+# utils.drawGraphHorizontal("A->B;B->C;C->D;D->E;E->A")
+#####
+
+#####
+# Question 4.2
+#####
+#
+#
+#####
 
 def drawNaiveBayes(df, root):
     """
@@ -389,3 +407,6 @@ def nbParamsNaiveBayes(df, root, attrs = None):
     print("{} variable(s) : {} octets".format(len(attrs), size))
     return size #encore une fois pas sûre
 
+class MLNaiveBayesClassifier(APrioriClassifier):
+
+class MAPNaiveBayesClassifier(APrioriClassifier):
