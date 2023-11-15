@@ -1,4 +1,3 @@
-
 # Maissa Itchir
 # Samia Bouchaal
 
@@ -6,8 +5,10 @@ import utils
 import pandas as pd
 import numpy as np
 import math
+from scipy.stats import chi2_contingency
 
-
+import matplotlib
+import matplotlib.pyplot as plt
 
 
 def getPrior(df):
@@ -16,8 +17,8 @@ def getPrior(df):
 
     Parametres
     ---------
-    df : pandas.dataframe
-        le `pandas.dataframe` contenant les données
+        df: pandas.dataframe
+            le `pandas.dataframe` contenant les données
 
     Resultats
     -------
@@ -48,8 +49,8 @@ class APrioriClassifier(utils.AbstractClassifier):
 
         Paramètres
         ----------
-        attrs : dict
-            Dictionnaire contenant les attributs de l'individu.
+            attrs: Dict[str,valeur]
+                Dictionnaire contenant les attributs de l'individu.
 
         Résultats
         -------
@@ -66,8 +67,8 @@ class APrioriClassifier(utils.AbstractClassifier):
 
         Paramètres
         ----------
-        df : pandas.DataFrame
-            Le DataFrame contenant les données à évaluer.
+            df: pandas.DataFrame
+                Le DataFrame contenant les données à évaluer.
 
         Résultats
         -------
@@ -104,10 +105,10 @@ def P2D_l(df,attr):
   
     Parametes
     ---------
-    df : pandas.dataframe
-        le `pandas.dataframe` contenant les données
-    att:  int
-        le nom d'une colonne du DataFrame
+        df: pandas.dataframe
+            le `pandas.dataframe` contenant les données
+        att:  int
+            le nom d'une colonne du DataFrame
 
     Results
     -------
@@ -179,10 +180,10 @@ class ML2DClassifier(APrioriClassifier):
         
         Paramètres
         ----------
-        df: pandas.DataFrame
-            Le DataFrame contenant les données.
+            df: pandas.DataFrame
+                Le DataFrame contenant les données.
         attr: str
-            Le nom de l'attribut dont on veut calculer la probabilité conditionnelle.
+                Le nom de l'attribut dont on veut calculer la probabilité conditionnelle.
         
         Résultats
         -------
@@ -225,10 +226,10 @@ class MAP2DClassifier(APrioriClassifier):
         
         Paramètres
         ----------
-        df: pandas.DataFrame
-            Le DataFrame contenant les données.
+            df: pandas.DataFrame
+                Le DataFrame contenant les données.
         attr: str
-            Le nom de l'attribut dont on veut calculer la probabilité conditionnelle.
+                Le nom de l'attribut dont on veut calculer la probabilité conditionnelle.
         
         Résultats
         -------
@@ -247,8 +248,7 @@ class MAP2DClassifier(APrioriClassifier):
         
         Résultats
         -------
-        int
-            La classe estimée.
+                Retourne La classe estimée.
         """
         val_attr = attrs[self.attr]
         classe = 0
@@ -279,7 +279,7 @@ def nbParams(df, liste = None):
             Liste facultative de noms de colonnes. Si non spécifié, les colonnes du dataframe seront utilisées par défaut.
     Résultats
     -------
-        None
+        affiche et retourne le nombre d'octets
     """
     taille = 8
     res = 0
@@ -288,7 +288,7 @@ def nbParams(df, liste = None):
     for attr in liste:
         taille *= np.unique(df[attr]).size
     print("{} variable(s) : {} octets".format(len(liste), taille))
-    return taille # pas sûre a tester
+    return taille 
 
 
 def nbParamsIndep(df):
@@ -298,17 +298,19 @@ def nbParamsIndep(df):
     Paramètres
     ----------
         df : pandas.DataFrame
-         Le dataframe contenant les données
+            Le dataframe contenant les données
     
     Résultats
     -------
-        None
+        affiche et retourne la valeur calculee en octets 
+        
     """
     taille = 0
     liste = list(df.columns)
     for attr in liste:
         taille += np.unique(df[attr]).size * 8
     print("{} variable(s) : {} octets".format(len(liste), taille))
+    return taille
 
 
 #####
@@ -353,19 +355,22 @@ def nbParamsIndep(df):
 #
 #####
 
+
+
 def drawNaiveBayes(df, root):
     """
     Construit un graphe orienté représentant naïve Bayes.
-    
+
     Paramètres
     ----------
-        df: pandas.dataframe
-            Dataframe de reference
+        df: pandas.DataFrame
+            Dataframe contenant les données.
         root: str
             Le nom de la colonne du Dataframe utilisée comme racine.
+    
     Résultats
     -------
-    Une représentation graphique du modèle naïve Bayes.
+    Retourne le graphe naïve Bayes construit.
     """
     chaine = ""
 
@@ -377,35 +382,41 @@ def drawNaiveBayes(df, root):
     return utils.drawGraph(chaine)
 
 
+
 def nbParamsNaiveBayes(df, root, attrs = None):
     """
-    Affiche la taille memoire pour la representation des tables de probabilites
-    Parametres
+    Affiche la taille mémoire de tables P(target), P(attr1|target),.., P(attrk|target)
+    étant donné un dataframe df, la colonne racine col_pere et la liste [target,attr1,...,attrk],
+    en supposant qu'un float est représenté sur 8 octets.
+    
+    Paramètres
     ----------
-        df : pandas.dataframe
-            DataFrame de reference
-        root : str
-            Nom de la c
-        attrs : Dict
-    Resultats
-    ---------
-        int
-
+        df: pandas.DataFrame
+            Dataframe contenant les données.
+        root: str
+            Le nom de la colonne du Dataframe utilisée comme racine.
+        attrs: Liste
+            Liste contenant les colonnes prises en considération pour le calcul.
+    
+    Résultats
+    -------
+        Affiche et retourne le nombre d'octets nécessaires pour représenter les tables
     """
-    taille = np.unique(df[root]).siza
-    size = taille * 8
-
-    if attrs == None:
-        attrs = list.df[colonne]
+    taille = np.unique(df[root]).size
+    size = taille*8
+   
+    if attrs is None:
+        attrs = list(df.columns)
 
     for attr in attrs:
         if attr == root:
             continue
         tmp = (taille * np.unique(df[attr]).size) * 8
         size += tmp
-
+   
     print("{} variable(s) : {} octets".format(len(attrs), size))
-    return size #encore une fois pas sûre
+    return size
+
 
 class MLNaiveBayesClassifier(APrioriClassifier):
     """
@@ -419,7 +430,8 @@ class MLNaiveBayesClassifier(APrioriClassifier):
         
         Paramètres
         ----------
-            dataframe. Doit contenir une colonne appelée "target".
+            df: pandas.DataFrame
+                Dataframe contenant les données.
         """
         self.df = df
         self.dico_P2D_l = {}
@@ -434,7 +446,8 @@ class MLNaiveBayesClassifier(APrioriClassifier):
         
         Paramètres
         ----------
-            attrs: dictionnaire nom-valeur des attributs
+            attrs: Dict[str,valeur]
+                dictionnaire nom-valeur des attributs
 
         Résultats
         ------- 
@@ -455,7 +468,8 @@ class MLNaiveBayesClassifier(APrioriClassifier):
 
         Paramètres
         ----------
-            attrs: le dictionnaire nom-valeur des attributs
+             attrs: Dict[str,valeur]
+                dictionnaire nom-valeur des attributs
 
         Résultats
         -------
@@ -491,7 +505,8 @@ class MAPNaiveBayesClassifier(APrioriClassifier):
         dictionnaire avec les probabilités de target.
         Paramètres
         ----------
-            df: dataframe. Doit contenir une colonne appelée "target".
+            df: pandas.DataFrame
+                Dataframe contenant les données.
         """
         self.df = df
         self.dico_P2D_l = {}
@@ -505,8 +520,8 @@ class MAPNaiveBayesClassifier(APrioriClassifier):
         À partir d'un dictionanire d'attributs,on estime la classe.         
         Paramètres
         ----------
-            attrs: le dictionnaire nom-valeur des attributs
-        Résultats
+            attrs: Dict[str,valeur]
+                dictionnaire nom-valeur des attributs
         -------
             retourne la classe estimée
         """
@@ -525,8 +540,8 @@ class MAPNaiveBayesClassifier(APrioriClassifier):
         Calcule la probabilité à posteriori par naïve Bayes : P(target | attr1, ..., attrk).
         Paramètres
         ----------
-            attrs: le dictionnaire nom-valeur des attributs
-        Résultats
+            attrs: Dict[str,valeur]
+                dictionnaire nom-valeur des attributs
         -------
              Retourne le dictionnaire de probabilités à posteriori
         """    
@@ -563,9 +578,12 @@ def isIndepFromTarget(df,attr,x) :
     Vérifie si attr est indépendant de target au seuil de x%.
     Paramètres
     ----------
-        df: dataframe. Doit contenir une colonne appelée "target".
-        attr: le nom d'une colonne du dataframe df.
-        x: seuil de confiance.
+        df: pandas.DataFrame
+                Dataframe contenant les données.
+        attrs: Dict[str,valeur]
+                dictionnaire nom-valeur des attributs
+        x: int
+            seuil de confiance.
 
     Résultats
     -------
@@ -590,8 +608,10 @@ class ReducedMLNaiveBayesClassifier(APrioriClassifier):
         les probabilités conditionnelles P(attribut | target).
         Paramètres
         ----------
-            df: dataframe. Doit contenir une colonne appelée "target".
-            x: seuil de confiance pour le test d'indépendance
+            df: pandas.DataFrame
+                Dataframe contenant les données.
+            x: int
+                seuil de confiance.
         """
         self.df = df
         self.dico_P2D_l = {}
@@ -606,7 +626,8 @@ class ReducedMLNaiveBayesClassifier(APrioriClassifier):
         À partir d'un dictionanire d'attributs, on estime la classe.        
         Paramètres
         ----------
-            attrs: le dictionnaire nom-valeur des attributs
+            attrs: Dict[str,valeur]
+                dictionnaire nom-valeur des attributs
         Résultats
         -------
             Retourne la classe estimée
@@ -625,7 +646,8 @@ class ReducedMLNaiveBayesClassifier(APrioriClassifier):
         Calcule la vraisemblance par naïve Bayes : P(attr1, ..., attrk | target).
         Paramètres
         ----------
-            attrs: le dictionnaire nom-valeur des attributs
+            attrs: Dict[str,valeur]
+                dictionnaire nom-valeur des attributs
         Résultats
         -------
             Retourne un dictionnaire contenant les probabilités de vraisemblance pour chaque classe de la colonne 'target'.
@@ -668,8 +690,10 @@ class ReducedMAPNaiveBayesClassifier(APrioriClassifier):
         dictionnaire avec les probabilités de target.
         Paramètres
         ----------
-            df: dataframe. Doit contenir une colonne appelée "target".
-            x: seuil de confiance pour le test d'indépendance.
+            df: pandas.DataFrame
+                Dataframe contenant les données.
+            x: int
+                seuil de confiance.
         """
         self.df = df
         self.dico_P2D_l = {}
@@ -684,7 +708,8 @@ class ReducedMAPNaiveBayesClassifier(APrioriClassifier):
         À partir d'un dictionnaire d'attributs, on estime la classe.        
         Paramètres
         ----------
-            attrs: le dictionnaire nom-valeur des attributs
+            attrs: Dict[str,valeur]
+                dictionnaire nom-valeur des attributs
         Résultats
         -------
             retourne la classe estimée
@@ -704,8 +729,8 @@ class ReducedMAPNaiveBayesClassifier(APrioriClassifier):
         Calcule la probabilité à posteriori par naïve Bayes : P(target | attr1, ..., attrk).
         Paramètres
         ----------
-            attrs: le dictionnaire nom-valeur des attributs
-
+            attrs: Dict[str,valeur]
+                dictionnaire nom-valeur des attributs
         Résultats
         -------
             Rerourne dictionnaire contenant les probabilités à posteriori pour chaque classe de la colonne 'target'.
@@ -756,8 +781,10 @@ def mapClassifiers(dic, df):
     Représente graphiquement les classifieurs dans l'espace (précision, rappel).
     Paramètres
         ----------
-        dic: Dictionnaire {nom: instance de classifier}.
-        df: DataFrame. Doit contenir une colonne appelée "target".
+        dic: 
+            Dictionnaire {nom: instance de classifier}.
+        df: pandas.DataFrame
+                Dataframe contenant les données.
     """
     precision = np.empty(len(dic))
     rappel = np.empty(len(dic))
@@ -795,9 +822,12 @@ def MutualInformation(df, x, y):
     Calcule l'information mutuelle entre les colonnes x et y du dataframe.
     Paramètres
     ----------
-        df: Dataframe contenant les données. 
-        x: nom d'une colonne du dataframe.
-        y: nom d'une colonne du dataframe.
+        df: pandas.DataFrame
+            Dataframe contenant les données.. 
+        x: str
+            nom d'une colonne du dataframe.
+        y: str
+            nom d'une colonne du dataframe.
     Résultats
     -------
         Retourne l'information mutuelle qui est calculée en multipliant cette matrice par la matrice P(x, y) et en sommant le résultat
@@ -844,10 +874,12 @@ def ConditionalMutualInformation(df,x,y,z):
     
     Paramètres
     ----------
-        df: Dataframe contenant les données. 
-        x: nom d'une colonne du dataframe.
-        y: nom d'une colonne du dataframe.
-        z: nom d'une colonne du dataframe.
+        df: pandas.DataFrame
+            Dataframe contenant les données.. 
+        x: str
+            nom d'une colonne du dataframe.
+        y: str
+            nom d'une colonne du dataframe.
     Résultats
     -------
         Retourne l'information mutuelle conditionnelle qui est calculée en multipliant cette matrice par la matrice P(x,y,z) et en sommant le résultat
