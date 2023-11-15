@@ -408,5 +408,497 @@ def nbParamsNaiveBayes(df, root, attrs = None):
     return size #encore une fois pas sûre
 
 class MLNaiveBayesClassifier(APrioriClassifier):
+    """
+    Classifieur par maximum de vraissemblance utilisant le modèle naïve Bayes.
+    """
+    def __init__(self, df):
+        """
+        Initialise le classifieur. Crée un dictionnarie où la clé est le nom de
+        chaque attribut et la valeur est un dictionnaire de dictionnaires contenant
+        les probabilités conditionnelles P(attribut | target).
+        
+        Paramètres
+        ----------
+            dataframe. Doit contenir une colonne appelée "target".
+        """
+        self.df = df
+        self.dico_P2D_l = {}
+        attrs = list(df.columns)
+        attrs.remove("target")
+        for attr in attrs:
+            self.dico_P2D_l[attr] = P2D_l(df, attr)
+   
+    def estimClass(self, attrs):
+        """
+        À partir d'un dictionanire d'attributs,on estime la classe.        
+        
+        Paramètres
+        ----------
+            attrs: dictionnaire nom-valeur des attributs
+
+        Résultats
+        ------- 
+            retourne la classe estimée
+        """
+        vraissemblance = self.estimProbas(attrs)
+        classe = 0
+        proba = 0.0
+        for i in vraissemblance.keys():
+            if vraissemblance[i] >= proba :
+                classe = i
+                proba = vraissemblance[i]
+        return classe
+       
+    def estimProbas(self, attrs):
+        """
+        Calcule la vraisemblance par naïve Bayes : P(attr1, ..., attrk | target).
+
+        Paramètres
+        ----------
+            attrs: le dictionnaire nom-valeur des attributs
+
+        Résultats
+        -------
+            retourne un dictionnaire contenant les probabilités de vraisemblance calculées pour chaque classe de la colonne 'target'
+        """    
+        val_target = self.df['target'].unique() #target [1,0]
+        dico_proba = dict.fromkeys(val_target, 1) # dico_proba = {1:1 , 0:1}
+       
+        for attr in self.dico_P2D_l.keys() :
+            dico_tmp  =  self.dico_P2D_l[attr]
+            for key_target in dico_proba.keys():
+                """
+                Si la clé n'existe pas dans dico_tmp
+                Alors on fait une anticipé en renvoyant {1:0.0, 0:0.0}
+                """
+                if attrs[attr] not in dico_tmp[key_target]:  
+                    res = dict.fromkeys(val_target, 0.0)
+                    return res
+                dico_proba[key_target] *= dico_tmp[key_target][attrs[attr]]
+        return dico_proba
+
+
 
 class MAPNaiveBayesClassifier(APrioriClassifier):
+    """
+    Classifieur par le maximum a posteriori en utilisant le modèle naïve Bayes.
+    """
+    def __init__(self, df):
+        """
+        Initialise le classifieur. Crée un dictionnarie où la clé est le nom de
+        chaque attribut et la valeur est un dictionnaire de dictionnaires contenant
+        les probabilités conditionnelles P(attribut | target). Cree aussi un
+        dictionnaire avec les probabilités de target.
+        Paramètres
+        ----------
+            df: dataframe. Doit contenir une colonne appelée "target".
+        """
+        self.df = df
+        self.dico_P2D_l = {}
+        tab_col = list(df.columns.values)
+        tab_col.remove("target")
+        for attr in tab_col:
+            self.dico_P2D_l[attr] = P2D_l(df, attr)
+   
+    def estimClass(self, attrs):
+        """
+        À partir d'un dictionanire d'attributs,on estime la classe.         
+        Paramètres
+        ----------
+            attrs: le dictionnaire nom-valeur des attributs
+        Résultats
+        -------
+            retourne la classe estimée
+        """
+        vraissemblance = self.estimProbas(attrs)
+        classe = 0
+        proba = 0.0
+        for i in vraissemblance.keys():
+            if vraissemblance[i] >= proba :
+                classe = i
+                proba = vraissemblance[i]
+        return classe
+       
+
+    def estimProbas(self, attrs):
+        """
+        Calcule la probabilité à posteriori par naïve Bayes : P(target | attr1, ..., attrk).
+        Paramètres
+        ----------
+            attrs: le dictionnaire nom-valeur des attributs
+        Résultats
+        -------
+             Retourne le dictionnaire de probabilités à posteriori
+        """    
+        val_target = self.df['target'].unique() #target [1,0]
+        df = self.df.target.value_counts()/self.df.target.count()
+        dico_proba = df.to_dict() #convertir le df en dictionnaire dico_proba = {1:xxx, 0:xxx}
+       
+        for attr in self.dico_P2D_l.keys() :
+            dico_tmp  =  self.dico_P2D_l[attr]
+            for key_target in dico_proba.keys():
+                """
+                Si la clé n'existe pas dans dico_tmp
+                Alors on fait une anticipé en renvoyant {1:0.0, 0:0.0}
+                """
+                if attrs[attr] not in dico_tmp[key_target]:  
+                    res = dict.fromkeys(val_target, 0.0)
+                    return res
+                dico_proba[key_target] *= dico_tmp[key_target][attrs[attr]]
+       
+        somme_proba = sum(dico_proba.values()) # contient la somme des probas calculées
+       
+        for prob in dico_proba.keys() :
+            dico_proba[prob] /= somme_proba
+       
+        return dico_proba
+
+
+
+
+
+
+def isIndepFromTarget(df,attr,x) :
+    """
+    Vérifie si attr est indépendant de target au seuil de x%.
+    Paramètres
+    ----------
+        df: dataframe. Doit contenir une colonne appelée "target".
+        attr: le nom d'une colonne du dataframe df.
+        x: seuil de confiance.
+
+    Résultats
+    -------
+        Retourne True si attr est indépendant de target, False sinon.
+    """
+    liste = pd.crosstab(df[attr], df.target) #transformer le df en liste
+    _,p,_,_ = chi2_contingency(liste) # calculer le p_value
+    if p < x : # on rejette l'hypothese si p_value est inferieur au seuil de x%
+        return False
+    return True
+
+
+
+class ReducedMLNaiveBayesClassifier(APrioriClassifier):
+    """
+    Classifieur par maximum de vraissemblance utilisant le modèle naïve Bayes reduit. 
+    """   
+    def __init__(self, df, x):
+        """
+        Initialise le classifieur. Crée un dictionnaire où la clé est le nom de
+        chaque attribut et la valeur est un dictionnaire de dictionnaires contenant
+        les probabilités conditionnelles P(attribut | target).
+        Paramètres
+        ----------
+            df: dataframe. Doit contenir une colonne appelée "target".
+            x: seuil de confiance pour le test d'indépendance
+        """
+        self.df = df
+        self.dico_P2D_l = {}
+        attrs = list(df.columns) # recupere tous les attributs
+        attrs.remove("target")
+        for attr in attrs:
+            if not isIndepFromTarget(df, attr, x):
+                self.dico_P2D_l[attr] = P2D_l(df, attr)
+   
+    def estimClass(self, attrs):
+        """
+        À partir d'un dictionanire d'attributs, on estime la classe.        
+        Paramètres
+        ----------
+            attrs: le dictionnaire nom-valeur des attributs
+        Résultats
+        -------
+            Retourne la classe estimée
+        """
+        vraissemblance = self.estimProbas(attrs)
+        classe = 0
+        proba = 0.0
+        for i in vraissemblance.keys():
+            if vraissemblance[i] > proba :
+                classe = i
+                proba = vraissemblance[i]
+        return classe
+       
+    def estimProbas(self, attrs):
+        """
+        Calcule la vraisemblance par naïve Bayes : P(attr1, ..., attrk | target).
+        Paramètres
+        ----------
+            attrs: le dictionnaire nom-valeur des attributs
+        Résultats
+        -------
+            Retourne un dictionnaire contenant les probabilités de vraisemblance pour chaque classe de la colonne 'target'.
+        """    
+        val_target = self.df['target'].unique() #target [1,0]
+        dico_proba = dict.fromkeys(val_target, 1) # dico_proba = {1:1 , 0:1}
+       
+        for attr in self.dico_P2D_l.keys() :
+            dico_tmp  =  self.dico_P2D_l[attr]
+            for key_target in dico_proba.keys():
+                """
+                Si la clé n'existe pas dans dico_tmp
+                Alors on fait une anticipé en renvoyant {1:0.0, 0:0.0}
+                """
+                if attrs[attr] not in dico_tmp[key_target]:  
+                    res = dict.fromkeys(val_target, 0.0)
+                    return res
+                dico_proba[key_target] *= dico_tmp[key_target][attrs[attr]]
+        return dico_proba
+   
+    def draw(self) :
+        """
+        Construit un graphe orienté représentant le modèle naïve Bayes réduit.
+        """
+        chaine = ""
+        for attr in self.dico_P2D_l.keys():
+            chaine += "target" + "->" + attr + ";"
+        return utils.drawGraph(chaine)
+
+
+class ReducedMAPNaiveBayesClassifier(APrioriClassifier):
+    """
+    Classifieur par le maximum a posteriori en utilisant le modèle naïve Bayes.
+    """
+    def __init__(self, df, x):
+        """
+        Initialise le classifieur. Crée un dictionnaire où la clé est le nom de
+        chaque attribut et la valeur est un dictionnaire de dictionnaires contenant
+        les probabilités conditionnelles P(attribut | target). Crée aussi un
+        dictionnaire avec les probabilités de target.
+        Paramètres
+        ----------
+            df: dataframe. Doit contenir une colonne appelée "target".
+            x: seuil de confiance pour le test d'indépendance.
+        """
+        self.df = df
+        self.dico_P2D_l = {}
+        tab_col = list(df.columns.values)
+        tab_col.remove("target")
+        for attr in tab_col:
+            if not isIndepFromTarget(df, attr, x):
+                self.dico_P2D_l[attr] = P2D_l(df, attr)
+   
+    def estimClass(self, attrs):
+        """
+        À partir d'un dictionnaire d'attributs, on estime la classe.        
+        Paramètres
+        ----------
+            attrs: le dictionnaire nom-valeur des attributs
+        Résultats
+        -------
+            retourne la classe estimée
+        """
+        vraissemblance = self.estimProbas(attrs)
+        classe = 0
+        proba = 0.0
+        for i in vraissemblance.keys():
+            if vraissemblance[i] > proba :
+                classe = i
+                proba = vraissemblance[i]
+        return classe
+       
+
+    def estimProbas(self, attrs):
+        """
+        Calcule la probabilité à posteriori par naïve Bayes : P(target | attr1, ..., attrk).
+        Paramètres
+        ----------
+            attrs: le dictionnaire nom-valeur des attributs
+
+        Résultats
+        -------
+            Rerourne dictionnaire contenant les probabilités à posteriori pour chaque classe de la colonne 'target'.
+        """    
+        val_target = self.df['target'].unique() #target [1,0]
+        df = self.df.target.value_counts()/self.df.target.count()
+        dico_proba = df.to_dict() #convertir le df en dictionnaire dico_proba = {1:xxx, 0:xxx}
+       
+        for attr in self.dico_P2D_l.keys() :
+            dico_tmp  =  self.dico_P2D_l[attr]
+            for key_target in dico_proba.keys():
+                """
+                Si la clé n'existe pas dans dico_tmp
+                Alors on fait une anticipé en renvoyant {1:0.0, 0:0.0}
+                """
+                if attrs[attr] not in dico_tmp[key_target]:  
+                    res = dict.fromkeys(val_target, 0.0)
+                    return res
+                dico_proba[key_target] *= dico_tmp[key_target][attrs[attr]]
+       
+        somme_proba = sum(dico_proba.values()) # contient la somme des probas calculées
+       
+        for prob in dico_proba.keys() :
+            dico_proba[prob] /= somme_proba
+       
+        return dico_proba
+   
+    def draw(self) :
+        """
+        Construit un graphe orienté représentant le modèle naïve Bayes réduit.
+        """
+        chaine = ""
+        for attr in self.dico_P2D_l.keys():
+            chaine += "target" + "->" + attr + ";"
+        return utils.drawGraph(chaine)
+           
+#####
+# Question 6.1
+#####
+# 
+# 
+# 
+#####
+
+
+def mapClassifiers(dic, df):
+    """
+    Représente graphiquement les classifieurs dans l'espace (précision, rappel).
+    Paramètres
+        ----------
+        dic: Dictionnaire {nom: instance de classifier}.
+        df: DataFrame. Doit contenir une colonne appelée "target".
+    """
+    precision = np.empty(len(dic))
+    rappel = np.empty(len(dic))
+    
+    for i, nom in enumerate(dic):
+         dico_stats = dic[nom].statsOnDF(df)
+         precision[i] = dico_stats["Précision"]
+         rappel[i] = dico_stats["Rappel"]
+    
+    fig, ax = plt.subplots()
+    ax.grid(True)
+    ax.set_axisbelow(True)
+    ax.set_xlabel("Précision")
+    ax.set_ylabel("Rappel")
+    ax.scatter(precision, rappel, marker = 'x', c = 'red') 
+    
+    for i, nom in enumerate(dic):
+        ax.annotate(nom, (precision[i], rappel[i]))
+    
+    plt.show()
+
+#####
+# Question 6.3
+#####
+# Conclusion:
+
+#####
+
+
+
+
+def MutualInformation(df, x, y):
+
+    """
+    Calcule l'information mutuelle entre les colonnes x et y du dataframe.
+    Paramètres
+    ----------
+        df: Dataframe contenant les données. 
+        x: nom d'une colonne du dataframe.
+        y: nom d'une colonne du dataframe.
+    Résultats
+    -------
+        Retourne l'information mutuelle qui est calculée en multipliant cette matrice par la matrice P(x, y) et en sommant le résultat
+
+    """
+    list_x = np.unique(df[x].values) # Valeurs possibles de x.
+    list_y = np.unique(df[y].values) # Valeurs possibles de y.
+    
+    dico_x = {list_x[i]: i for i in range(list_x.size)} 
+    #un dictionnaire associant chaque valeur a leur indice en list_x.
+    
+    dico_y = {list_y[i]: i for i in range(list_y.size)} 
+    #un dictionnaire associant chaque valeur a leur indice en list_y.
+    
+    mat_xy = np.zeros((list_x.size, list_y.size), dtype = int)
+    #matrice des valeurs P(x,y)
+    
+    group = df.groupby([x, y]).groups
+    
+    for i, j in group:
+        mat_xy[dico_x[i], dico_y[j]] = len(group[(i, j)]) 
+    
+    mat_xy = mat_xy / mat_xy.sum()
+    
+    mat_x = mat_xy.sum(1)
+    #matrice des P(x)
+    mat_y = mat_xy.sum(0)
+    #matrice des P(y)
+    mat_px_py = np.dot(mat_x.reshape((mat_x.size, 1)),mat_y.reshape((1, mat_y.size))) 
+    #matrice des P(x)P(y)
+    
+    mat_res = mat_xy / mat_px_py
+    mat_res[mat_res == 0] = 1
+    #pour éviter des problèmes avec le log de zero
+    mat_res = np.log2(mat_res)
+    mat_res *= mat_xy
+    
+    return mat_res.sum()
+
+
+def ConditionalMutualInformation(df,x,y,z):
+    """
+    Calcule l'information mutuelle conditionnelle entre les colonnes x et y du dataframe en considerant les deux comme dependantes de la colonne z.
+    
+    Paramètres
+    ----------
+        df: Dataframe contenant les données. 
+        x: nom d'une colonne du dataframe.
+        y: nom d'une colonne du dataframe.
+        z: nom d'une colonne du dataframe.
+    Résultats
+    -------
+        Retourne l'information mutuelle conditionnelle qui est calculée en multipliant cette matrice par la matrice P(x,y,z) et en sommant le résultat
+
+    
+    """
+    list_x = np.unique(df[x].values) # Valeurs possibles de x.
+    list_y = np.unique(df[y].values) # Valeurs possibles de y.
+    list_z = np.unique(df[z].values) # Valeurs possibles de z.
+    
+    dico_x = {list_x[i]: i for i in range(list_x.size)} 
+    #un dictionnaire associant chaque valeur a leur indice en list_x.
+    
+    dico_y = {list_y[i]: i for i in range(list_y.size)} 
+    #un dictionnaire associant chaque valeur a leur indice en list_y.
+    
+    dico_z = {list_z[i]: i for i in range(list_z.size)} 
+    #un dictionnaire associant chaque valeur a leur indice en list_z.
+    
+    mat_xyz = np.zeros((list_x.size, list_y.size, list_z.size), dtype = int)
+    #matrice des valeurs P(x,y,z)
+    
+    group = df.groupby([x, y, z]).groups
+    
+    for i, j, k in group:
+        mat_xyz[dico_x[i], dico_y[j], dico_z[k]] = len(group[(i, j, k)]) 
+
+    
+    mat_xyz = mat_xyz / mat_xyz.sum()
+    
+    mat_xz = mat_xyz.sum(1)
+    #matrice des P(x, z)
+    
+    mat_yz = mat_xyz.sum(0)
+    #matrice des P(y, z)
+    
+    mat_z = mat_xz.sum(0)
+    #matrice des P(z)
+    
+    mat_pxz_pyz = mat_xz.reshape((list_x.size, 1, list_z.size)) * mat_yz.reshape((1, list_y.size, list_z.size)) 
+    #matrice des P(x, z)P(y, z)
+    
+    mat_pxz_pyz[mat_pxz_pyz == 0] = 1
+    
+    mat_pz_pxyz = mat_z.reshape((1, 1, list_z.size)) * mat_xyz
+    #matrice des P(z)P(x, y, z)
+    
+    mat_res = mat_pz_pxyz / mat_pxz_pyz
+    mat_res[mat_res == 0] = 1
+    #pour éviter des problèmes avec le log de zero
+    mat_res = np.log2(mat_res)
+    mat_res *= mat_xyz
+    
+    return mat_res.sum()
